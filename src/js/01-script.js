@@ -10,3 +10,9 @@ const refs = {
   btnLoadMore: document.querySelector('.js-btn-load'),
   loadElem: document.querySelector('.js-loader'),
 };
+
+refs.formElem.addEventListener('submit', e => {
+  e.preventDefault();
+
+  getArticles('Bitcoin', 1);
+});
