@@ -11,8 +11,44 @@ const refs = {
   loadElem: document.querySelector('.js-loader'),
 };
 
-refs.formElem.addEventListener('submit', e => {
+let query = '';
+let currentPage = 1;
+let maxPage = 1;
+const perPage = 10;
+
+//!======================================================
+refs.formElem.addEventListener('submit', async e => {
   e.preventDefault();
 
-  getArticles('Bitcoin', 1);
+  query = e.target.elements.query.value.trim();
+  currentPage = 1;
+  const data = await getArticles(query, currentPage);
+  maxPage = Math.ceil(data.totalResults / perPage);
+  const markup = articlesTemplate(data.articles);
+  refs.articleListElem.innerHTML = markup;
+  updateBtnStatus();
 });
+
+refs.btnLoadMore.addEventListener('click', async () => {
+  currentPage++;
+  const data = await getArticles(query, currentPage);
+  const markup = articlesTemplate(data.articles);
+  refs.articleListElem.insertAdjacentHTML('beforeend', markup);
+  updateBtnStatus();
+});
+
+//!======================================================
+function updateBtnStatus() {
+  if (currentPage >= maxPage) {
+    hideLoadBtn();
+  } else {
+    showLoadBtn();
+  }
+}
+
+function showLoadBtn() {
+  refs.btnLoadMore.classList.remove('hidden');
+}
+function hideLoadBtn() {
+  refs.btnLoadMore.classList.add('hidden');
+}
