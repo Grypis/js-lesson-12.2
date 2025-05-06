@@ -21,19 +21,52 @@ refs.formElem.addEventListener('submit', async e => {
   e.preventDefault();
 
   query = e.target.elements.query.value.trim();
+
+  if (!query) {
+    showError('Error query');
+    return;
+  }
+
   currentPage = 1;
-  const data = await getArticles(query, currentPage);
-  maxPage = Math.ceil(data.totalResults / perPage);
-  const markup = articlesTemplate(data.articles);
-  refs.articleListElem.innerHTML = markup;
+  showLoader();
+  hideLoadBtn();
+
+  try {
+    const data = await getArticles(query, currentPage);
+    maxPage = Math.ceil(data.totalResults / perPage);
+
+    if (maxPage === 0) {
+      showError('Empty Result');
+      hideLoader();
+      updateBtnStatus();
+      return;
+    }
+
+    const markup = articlesTemplate(data.articles);
+    refs.articleListElem.innerHTML = markup;
+  } catch (err) {
+    showError(err);
+  }
+
+  hideLoader();
   updateBtnStatus();
 });
 
 refs.btnLoadMore.addEventListener('click', async () => {
   currentPage++;
-  const data = await getArticles(query, currentPage);
-  const markup = articlesTemplate(data.articles);
-  refs.articleListElem.insertAdjacentHTML('beforeend', markup);
+  hideLoadBtn();
+  showLoader();
+
+  try {
+    const data = await getArticles(query, currentPage);
+    const markup = articlesTemplate(data.articles);
+    refs.articleListElem.insertAdjacentHTML('beforeend', markup);
+    skipOldElement();
+  } catch (err) {
+    showError(err);
+  }
+
+  hideLoader();
   updateBtnStatus();
 });
 
@@ -41,6 +74,12 @@ refs.btnLoadMore.addEventListener('click', async () => {
 function updateBtnStatus() {
   if (currentPage >= maxPage) {
     hideLoadBtn();
+    if (maxPage !== 0) {
+      iziToast.info({
+        title: 'The end',
+        message: 'End of collection!',
+      });
+    }
   } else {
     showLoadBtn();
   }
@@ -51,4 +90,29 @@ function showLoadBtn() {
 }
 function hideLoadBtn() {
   refs.btnLoadMore.classList.add('hidden');
+}
+
+function showLoader() {
+  refs.loadElem.classList.remove('hidden');
+}
+
+function hideLoader() {
+  refs.loadElem.classList.add('hidden');
+}
+
+function showError(message) {
+  iziToast.error({
+    title: 'Error',
+    message,
+  });
+}
+
+function skipOldElement() {
+  const liElem = refs.articleListElem.children[0];
+  const height = liElem.getBoundingClientRect().height;
+
+  scrollBy({
+    top: height,
+    behavior: 'smooth',
+  });
 }
